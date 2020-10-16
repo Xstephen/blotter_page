@@ -1,44 +1,26 @@
 import React, { ComponentProps } from 'react';
 
 import Head from 'next/head';
-import { NextPageContext } from 'next';
 
-import {
-  Avatar,
-  Card,
-  List,
-  Table,
-  Typography,
-  Popover,
-  Descriptions,
-  Row,
-  Col,
-  Collapse,
-  Button,
-  Modal,
-} from 'antd';
-import {
-  GithubOutlined,
-  QqOutlined,
-  MailOutlined,
-  ZhihuOutlined,
-  WechatOutlined,
-  AlipayOutlined,
-} from '@ant-design/icons';
-import { AntdIconProps } from '@ant-design/icons/lib/components/AntdIcon';
-import { ColumnCount } from 'antd/lib/list';
-import { ColumnsType } from 'antd/lib/table';
-
-import Container from '@/components/container';
 import If from '@/components/if';
+import Card from '@/components/card';
+import Avatar from '@/components/avatar';
+import { Tooltip } from '@/components/popover';
+import Button from '@/components/button';
+import { QQ, Github, Mail, Zhihu, Alipay, Wechat } from '@/components/svg';
+import { Flex } from '@/components/container';
+import Table, { Column } from '@/components/table';
+import Collapse from '@/components/collapse';
 
 import { Context } from '@/utils/global';
 import { showQR } from '@/utils/payment';
-import { JsxElement } from 'typescript';
 import { githubUser, githubRepos, githubRepo, about } from '@/utils/api';
+import { formatDate } from '@/utils/time';
 import { GithubRepo } from '@/types/github';
-import Visiable from '@/components/visiable';
+
 import moment from '@/utils/moment';
+
+import textStyles from '@/styles/text.module.scss';
 
 interface Education {
   name: string;
@@ -67,14 +49,6 @@ interface AboutPageState {
   loading: boolean;
 }
 
-function ToColumnCount(num: number): ColumnCount {
-  const count: ColumnCount[] = [1, 2, 3, 4, 6, 8, 12, 24];
-  for (var i = 0; i < count.length; i++) {
-    if (count[i] >= num) return count[i];
-  }
-  return count[count.length - 1];
-}
-
 class AboutPage extends React.Component<AboutPageProps, AboutPageState> {
   static defaultProps = {};
 
@@ -100,25 +74,24 @@ class AboutPage extends React.Component<AboutPageProps, AboutPageState> {
     }
   }
   render_pay = () => {
+    const socialMedia: {
+      name: string;
+      icon: React.ReactNode;
+    }[] = [
+      { name: 'wechat', icon: <Wechat /> },
+      { name: 'alipay', icon: <Alipay /> },
+    ];
     return (
-      <List
-        dataSource={[
-          { name: 'wechat', icon: <WechatOutlined /> },
-          { name: 'alipay', icon: <AlipayOutlined /> },
-        ]}
-        grid={{ column: 2 }}
-        style={{ textAlign: 'center' }}
-        renderItem={(item, idx) => (
-          <List.Item key={idx}>
-            <Button
-              size="large"
-              shape="circle"
-              icon={item.icon}
-              onClick={() => showQR(item.name as 'wechat' | 'alipay')}
-            />
-          </List.Item>
-        )}
-      />
+      <Flex mainAxis="space-around">
+        {socialMedia.map((item) => (
+          <Button
+            key={item.name}
+            size="large"
+            icon={item.icon}
+            onClick={() => showQR(item.name as 'wechat' | 'alipay')}
+          />
+        ))}
+      </Flex>
     );
   };
   render_social = () => {
@@ -132,120 +105,121 @@ class AboutPage extends React.Component<AboutPageProps, AboutPageState> {
         raw: this.props.github,
         name: `Github: ${this.props.github}`,
         link: `https://github.com/${this.props.github}`,
-        icon: () => <GithubOutlined />,
+        icon: () => <Github />,
       },
       {
         raw: this.props.qq,
         name: `QQ: ${this.props.qq}`,
         link: `https://wpa.qq.com/msgrd?v=3&uin=${this.props.qq}&site=qq&menu=yes`,
-        icon: () => <QqOutlined />,
+        icon: () => <QQ />,
       },
       {
         raw: this.props.email,
         name: `Email: ${this.props.email}`,
         link: `mailto:${this.props.email}`,
-        icon: () => <MailOutlined />,
+        icon: () => <Mail />,
       },
       {
         raw: this.props.zhihu,
         name: `知乎`,
         link: `https://www.zhihu.com/people/${this.props.zhihu}`,
-        icon: () => <ZhihuOutlined />,
+        icon: () => <Zhihu />,
       },
     ].filter((item) => !!item.raw);
 
     return (
-      <List
-        grid={{ column: ToColumnCount(socialMedia.length), gutter: 10 }}
-        dataSource={socialMedia}
-        style={{ fontSize: '25px', textAlign: 'center' }}
-        renderItem={(item) => (
-          <List.Item key={item.name}>
+      <Flex mainAxis="space-around">
+        {socialMedia.map((item) => (
+          <Tooltip
+            key={item.name}
+            title={item.name}
+            style={{ fontSize: 25 }}
+            className={textStyles.primary}
+          >
             <a href={item.link} target="_blank">
-              <Popover content={item.name}>
-                <span className="text-color">{item.icon()}</span>
-              </Popover>
+              {item.icon()}
             </a>
-          </List.Item>
-        )}
-      />
+          </Tooltip>
+        ))}
+      </Flex>
     );
   };
 
   render_education = () => {
-    const columns: ColumnsType<Education> = [
+    const columns: Column<Education>[] = [
       {
-        dataIndex: 'name',
+        key: 'name',
         title: '名称',
-        align: 'center',
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '50%',
+        minWidth: 100,
       },
       {
-        dataIndex: 'major',
+        key: 'major',
         title: '方向',
-        align: 'center',
-        width: 250,
-        ellipsis: true,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '25%',
+        minWidth: 50,
       },
       {
-        dataIndex: 'time',
+        key: 'time',
         title: '时间',
-        align: 'center',
-        width: 250,
-        ellipsis: true,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '25%',
+        minWidth: 50,
       },
     ];
     return (
       <Table<Education>
-        rowKey={(record) => record.name}
-        dataSource={this.props.edu}
+        // rowKey={(record) => record.name}
+        data={this.props.edu}
         columns={columns}
-        pagination={false}
-        scroll={{ x: true }}
+        // pagination={false}
+        // scroll={{ x: true }}
       />
     );
   };
 
   render_awards = () => {
-    const columns: ColumnsType<Award> = [
+    const columns: Column<Award>[] = [
       {
-        dataIndex: 'name',
-        align: 'center',
+        key: 'name',
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '50%',
+        minWidth: 100,
       },
       {
-        dataIndex: 'level',
-        align: 'center',
-        width: 250,
-        ellipsis: true,
+        key: 'level',
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '25%',
+        minWidth: 50,
       },
       {
-        dataIndex: 'count',
+        key: 'count',
         render: (value) => `×${value}`,
-        align: 'center',
-        width: 250,
-        ellipsis: true,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        width: '25%',
+        minWidth: 50,
       },
     ];
-    return (
-      <Table<Award>
-        dataSource={this.props.awards}
-        rowKey={(record) => record.name}
-        columns={columns}
-        size="small"
-        showHeader={false}
-        pagination={false}
-        scroll={{ x: true }}
-      />
-    );
+    return <Table<Award> data={this.props.awards} columns={columns} showHeader={false} />;
   };
 
   render_projects = () => {
     if (!!!this.props.github) return null;
-    const columns: ColumnsType<GithubRepo> = [
+    const columns: Column<GithubRepo>[] = [
       {
-        dataIndex: 'name',
+        key: 'name',
         title: '项目名',
-        ellipsis: true,
-        align: 'center',
+        minWidth: 100,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
         render: (value, record) => (
           <a target="_blank" href={record.html_url}>
             {value}
@@ -253,78 +227,76 @@ class AboutPage extends React.Component<AboutPageProps, AboutPageState> {
         ),
       },
       {
-        dataIndex: 'stargazers_count',
+        key: 'stargazers_count',
         title: 'star数',
-        align: 'center',
-        width: 100,
-        ellipsis: true,
+        minWidth: 100,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
         sorter: (a, b) => a.stargazers_count - b.stargazers_count,
       },
       {
-        dataIndex: 'forks_count',
+        key: 'forks_count',
         title: 'fork数',
-        align: 'center',
-        width: 100,
-        ellipsis: true,
+        minWidth: 100,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
         sorter: (a, b) => a.forks_count - b.forks_count,
       },
       {
-        dataIndex: 'pushed_at',
+        key: 'pushed_at',
         title: '最新更新',
-        align: 'center',
-        defaultSortOrder: 'descend',
+        minWidth: 100,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
         sorter: (a, b) => new Date(a.pushed_at).getTime() - new Date(b.pushed_at).getTime(),
         render(text) {
-          return moment(text).format('YYYY-MM-DD hh:mm:ss');
+          return formatDate(text);
         },
-        width: 200,
-        ellipsis: true,
       },
       {
-        dataIndex: 'language',
+        key: 'language',
         title: '语言',
-        filters: Array.from(
-          new Set(this.state.repos.map((item) => item.language).filter((l) => l !== null)),
-        ).map((l) => ({ text: l, value: l })),
-        onFilter: (value, record) => record.language && record.language.includes(record.language),
-        align: 'center',
+        minWidth: 100,
+        headStyle: { textAlign: 'center' },
+        style: { textAlign: 'center' },
+        filter: {
+          filters: Array.from(
+            new Set(this.state.repos.map((item) => item.language).filter((l) => l !== null)),
+          ),
+          onFilter: (value, item) => item.language && value.indexOf(item.language) != -1,
+        },
         width: 150,
-        ellipsis: true,
       },
     ];
     return (
       <Table<GithubRepo>
-        rowKey={(record) => record.name}
-        dataSource={this.state.repos}
+        data={this.state.repos}
         columns={columns}
-        loading={this.state.loading}
-        scroll={{ x: true }}
-        expandable={{
-          expandedRowRender: (record) => (
-            <Descriptions bordered size="small">
-              <Descriptions.Item key="created_at" label="创建时间">
-                {record.created_at}
-              </Descriptions.Item>
-              <Descriptions.Item key="pushed_at" label="最近推送时间">
-                {record.pushed_at}
-              </Descriptions.Item>
-              <Descriptions.Item key="updated_at" label="数据更新时间">
-                {record.updated_at}
-              </Descriptions.Item>
-              <Descriptions.Item key="description" label="描述">
-                {record.description}
-              </Descriptions.Item>
-            </Descriptions>
-          ),
+        defaultOrder={{
+          sortKey: 'pushed_at',
+          ascending: false,
         }}
-        pagination={{ pageSize: 10 }}
+        pagination
+        loading={this.state.loading}
+        expand={(record) => (
+          <dl>
+            <dt>创建时间</dt>
+            <dd> {record.created_at}</dd>
+            <dt>最近推送时间</dt>
+            <dd> {record.pushed_at}</dd>
+            <dt>数据更新时间</dt>
+            <dd> {record.updated_at}</dd>
+            <dt>描述</dt>
+            <dd> {record.description}</dd>
+          </dl>
+        )}
       />
     );
   };
 
   render() {
     return (
-      <Container>
+      <Card neumorphism>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -332,50 +304,38 @@ class AboutPage extends React.Component<AboutPageProps, AboutPageState> {
             </Head>
           )}
         </Context.Consumer>
-        <Card>
-          <Typography>
-            <Typography.Paragraph style={{ textAlign: 'center' }}>
-              <Context.Consumer>
-                {(context) => (
-                  <Avatar size={64} src={context.avatar} style={{ background: 'unset' }} />
-                )}
-              </Context.Consumer>
 
-              <br />
-              <Typography.Text strong>{this.props.author}</Typography.Text>
-            </Typography.Paragraph>
+        <Flex direction="TB" fullWidth style={{ textAlign: 'center' }}>
+          <Context.Consumer>
+            {(context) => <Avatar style={{ fontSize: 64, margin: 'auto' }} src={context.avatar} />}
+          </Context.Consumer>
 
-            <If condition={!!this.props.quote}>
-              <Typography.Paragraph style={{ textAlign: 'center' }}>
-                <em dangerouslySetInnerHTML={{ __html: this.props.quote }}></em>
-              </Typography.Paragraph>
-            </If>
+          <strong>{this.props.author}</strong>
 
-            <If condition={!!this.props.description}>
-              <Typography.Paragraph style={{ textAlign: 'center' }}>
-                <div dangerouslySetInnerHTML={{ __html: this.props.description }}></div>
-              </Typography.Paragraph>
-            </If>
+          <If condition={!!this.props.quote}>
+            <em dangerouslySetInnerHTML={{ __html: this.props.quote }}></em>
+          </If>
 
-            <Typography.Paragraph>{this.render_pay()}</Typography.Paragraph>
-            <Typography.Paragraph>{this.render_social()}</Typography.Paragraph>
-            <Collapse defaultActiveKey={['education', 'awards', 'projects']}>
-              <Collapse.Panel header="教育、工作经历" key="education">
-                {this.render_education()}
-              </Collapse.Panel>
-              <Collapse.Panel header="抱大腿奖项" key="awards">
-                {this.render_awards()}
-              </Collapse.Panel>
-              <Collapse.Panel
-                header="开源项目（需要访问 Github API，部分网络可能会出错）"
-                key="projects"
-              >
-                {this.render_projects()}
-              </Collapse.Panel>
+          <If condition={!!this.props.description}>
+            <div dangerouslySetInnerHTML={{ __html: this.props.description }}></div>
+          </If>
+
+          {this.render_pay()}
+          {this.render_social()}
+
+          <Flex.Item style={{ textAlign: 'initial' }}>
+            <Collapse title="教育、工作经历" defaultOpen>
+              {this.render_education()}
             </Collapse>
-          </Typography>
-        </Card>
-      </Container>
+            <Collapse title="抱大腿奖项" defaultOpen>
+              {this.render_awards()}
+            </Collapse>
+            <Collapse title="开源项目" defaultOpen>
+              {this.render_projects()}
+            </Collapse>
+          </Flex.Item>
+        </Flex>
+      </Card>
     );
   }
 }

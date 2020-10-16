@@ -1,0 +1,125 @@
+.sider {
+  overflow: visible;
+  position: fixed !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  // 边栏展开的阴影 z 坐标为 3，这里应该大于3
+  z-index: 4;
+  .siderbar {
+    transition: background var(--transition-time), width var(--transition-time),
+      box-shadow var(--transition-time), max-width var(--transition-time);
+    width: 0px;
+    height: 100vh;
+    background: var(--background);
+    overflow-x: hidden;
+    img {
+      transition: transform var(--transition-time);
+      -webkit-transition: 0.25s;
+      -webkit-transition: -webkit-transform 0.25s ease-out;
+      -moz-transition: -moz-transform 0.25s ease-out;
+    }
+    img:hover {
+      transform: rotateZ(360deg);
+      -webkit-transform: rotateZ(360deg);
+      -moz-transform: rotateZ(360deg);
+    }
+  }
+
+  .button_wrapper {
+    margin: 20px 5px 5px;
+  }
+
+  .menu {
+    width: 100%;
+    & > div {
+      transition: width var(--transition-time);
+      width: 100%;
+    }
+    li {
+      transition: padding-left var(--transition-time), text-align var(--transition-time),
+        background var(--transition-time), border-right var(--transition-time);
+      list-style: none;
+      width: 100%;
+      border-right: 0px;
+
+      // 垂直居中
+      height: 2.5em;
+      padding-top: 0.5em;
+
+      // 展开时，左对齐
+      padding-left: 25px;
+      text-align: left;
+
+      &.active {
+        border-right: 2px solid var(--primary);
+        background: var(--primary-background);
+        a {
+          color: var(--primary);
+          &:active {
+            color: var(--primary);
+          }
+        }
+      }
+
+      a {
+        color: var(--secondary);
+        transition: color var(--transition-time);
+
+        &:active {
+          color: var(--secondary);
+        }
+        .prefix {
+          font-size: 1.25em;
+          margin-right: 5px;
+          transition: font-size var(--transition-time), margin-right var(--transition-time);
+        }
+        .text {
+          font-size: 1em;
+          transition: font-size var(--transition-time);
+        }
+      }
+    }
+  }
+}
+
+// 折叠状态（动画用）
+.sider_collapsed {
+  .siderbar {
+    .menu {
+      li {
+        padding-left: 0 !important;
+        text-align: center !important;
+        .prefix {
+          margin-right: 0 !important;
+        }
+        .text {
+          font-size: 0 !important;
+        }
+        // &.active {
+        //   padding-left: 2px !important;
+        // }
+      }
+    }
+  }
+}
+
+.divider {
+  :global(.ant-divider-inner-text) {
+    padding: 5px 0;
+  }
+}
+
+.dimmed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  animation: dimmed-change 0.5s 1 alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  // 文章页面的导航 z 坐标为 2，这里需要大于该值
+  z-index: 3;
+}

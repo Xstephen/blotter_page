@@ -1,12 +1,14 @@
 import React, { ComponentProps, CSSProperties } from 'react';
 import Head from 'next/head';
 
-import { Avatar, Card, List } from 'antd';
-import { Icon } from '@ant-design/compatible';
+import Card from '@/components/card';
+import Avatar from '@/components/avatar';
+import SVG, { Compass, IconName } from '@/components/svg';
+import Button, { A } from '@/components/button';
 import Link from 'next/link';
+import { Flex } from '@/components/container';
 
-import styles from './apps.less';
-import Container from '@/components/container';
+import styles from './apps.module.scss';
 import { Context } from '@/utils/global';
 
 const imageSuffix = ['jpg', 'gif', 'jpeg', 'png', 'svg', 'bmp'];
@@ -17,7 +19,7 @@ function isImageUrl(url: string): boolean {
 }
 
 interface AppsProps extends ComponentProps<'base'> {
-  apps: { name: string; link: string; img?: string; icon?: string; style?: CSSProperties }[];
+  apps: { name: string; link: string; img?: string; icon?: IconName; style?: CSSProperties }[];
 }
 
 interface AppsState {}
@@ -33,15 +35,15 @@ class Apps extends React.Component<AppsProps, AppsState> {
   static async getInitialProps() {
     return {
       apps: [
-        {
-          name: '动森候机大厅',
-          link: '/apps/queue',
-          img: 'https://static.oyohyee.com/apps/queue.png',
-        },
+        // {
+        //   name: '动森候机大厅',
+        //   link: '/apps/queue',
+        //   img: 'https://static.oyohyee.com/apps/queue.png',
+        // },
         {
           name: '在线密码学',
           link: '/apps/crypto',
-          img: 'Crypto',
+          icon: 'lock',
           style: { color: ' #109025' },
         },
         {
@@ -56,7 +58,7 @@ class Apps extends React.Component<AppsProps, AppsState> {
 
   render() {
     return (
-      <Container>
+      <Card neumorphism>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -64,31 +66,29 @@ class Apps extends React.Component<AppsProps, AppsState> {
             </Head>
           )}
         </Context.Consumer>
-        <Card>
-          <div className={styles.container}>
-            {this.props.apps.map((item) => (
-              <Link href={item.link} key={item.name}>
-                <a className={[styles.wrapper, 'text-color'].join(' ')}>
-                  <div className={styles.img}>
-                    {typeof item.img !== 'undefined' ? (
-                      isImageUrl(item.img) ? (
-                        <Avatar size={64} src={item.img} style={item.style} />
-                      ) : (
-                        <Avatar size={64} style={item.style}>
-                          {item.img}
-                        </Avatar>
-                      )
+        <Flex mainAxis="space-around">
+          {this.props.apps.map((item) => (
+            <Flex key={item.name} direction="TB" fullWidth>
+              <Link href={item.link} key={item.name} passHref>
+                <A
+                  neumorphism
+                  icon={
+                    typeof item.img !== 'undefined' ? (
+                      <Avatar src={item.img} style={{ fontSize: 64, ...item.style }} />
                     ) : (
-                      <Avatar size={64} icon={<Icon type={item.icon} />} style={item.style} />
-                    )}
-                  </div>
-                  <p>{item.name}</p>
-                </a>
+                      <Avatar style={{ fontSize: 64, ...item.style }}>
+                        <SVG icon={item.icon} />
+                      </Avatar>
+                    )
+                  }
+                  style={{ fontSize: 64, borderRadius: 10 }}
+                />
               </Link>
-            ))}
-          </div>
-        </Card>
-      </Container>
+              <p style={{ textAlign: 'center' }}>{item.name}</p>
+            </Flex>
+          ))}
+        </Flex>
+      </Card>
     );
   }
 }

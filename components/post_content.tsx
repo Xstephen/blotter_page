@@ -1,132 +1,23 @@
 import React, { Component } from 'react';
-import Link from 'next/link';
-
-import { Anchor, Skeleton } from 'antd';
-import {
-  EyeOutlined,
-  CalendarOutlined,
-  EditOutlined,
-  TagOutlined,
-  RightOutlined,
-  LeftOutlined,
-} from '@ant-design/icons';
+import Head from 'next/head';
 
 import moment from '@/utils/moment';
 
 import Image, { setImageLightbox, setSVGLightbox } from '@/components/image';
-import If from '@/components/if';
-import TagPart from '@/components/tag';
+
 import { CardContent } from '@/components/post_card';
 import Card from '@/components/card';
-import Button from '@/components/button';
+import Anchor from '@/components/anchor';
+import Loading from '@/components/loading';
+import Carousel from '@/components/carousel';
+import { Flex } from '@/components/container';
 
-import { Context } from '@/utils/global';
 import { travels_get_url } from '@/utils/api';
 
-import styles from '@/pages/post/post.less';
-import Carousel from './carousel';
-import { Flex } from './container';
-import Head from 'next/head';
-
-interface AnchorType {
-  name: string;
-  id: string;
-  level: number;
-  children: AnchorType[];
-}
-
-function findAnchors(text: string): AnchorType[] {
-  var re = new RegExp(`<h([1-6]) id="(.*)">(.*)</h\\1>`, 'g');
-  var result_list: AnchorType[] = [];
-
-  do {
-    var result = re.exec(text);
-    if (result !== null) {
-      result_list.push({
-        id: `#${result[2]}`,
-        name: result[3],
-        level: parseInt(result[1]),
-        children: [],
-      });
-    }
-  } while (result);
-
-  var anchors: AnchorType[] = [];
-
-  var insert = (lst: AnchorType[], value: AnchorType) => {
-    if (lst.length > 0 && lst[lst.length - 1].level < value.level) {
-      insert(lst[lst.length - 1].children, value);
-    } else {
-      lst.push(value);
-    }
-  };
-
-  result_list.map((anchor: AnchorType) => {
-    insert(anchors, anchor);
-  });
-
-  anchors.push({
-    id: '#blotter-comment',
-    name: '评论区',
-    level: 1,
-    children: [],
-  });
-
-  return anchors;
-}
-
-function renderAnchor(anchor: AnchorType) {
-  return (
-    <Anchor.Link key={`${anchor.id}|${anchor.name}`} href={anchor.id} title={anchor.name}>
-      {anchor.children.map(renderAnchor)}
-    </Anchor.Link>
-  );
-}
-
-function AnchorsPart(props: { content: string; container?: HTMLElement }) {
-  const { container, content } = props;
-  const width = 275;
-
-  const context = React.useContext(Context);
-  const anchors = React.useMemo(() => findAnchors(content), [content]);
-  const [show, setShow] = React.useState(context.big_screen);
-  const [top, setTop] = React.useState(50);
-
-  if (!!container) container.onscroll = () => setTop(container.scrollTop + 50);
-
-  return (
-    <Anchor
-      getContainer={!!container ? () => container : undefined}
-      offsetTop={10}
-      style={{
-        right: show ? 10 : -width,
-        top,
-        position: !!container ? 'absolute' : 'fixed',
-        width,
-      }}
-    >
-      <div className={styles.button} onClick={() => setShow(!show)}>
-        {show ? <RightOutlined /> : <LeftOutlined />}
-      </div>
-      <div className={styles.anchors_content}>{anchors.map(renderAnchor)}</div>
-    </Anchor>
-  );
-}
+import styles from '@/pages/post/post.module.scss';
 
 interface PostContentProps {
-  post: {
-    url: string;
-    content: string;
-    abstract: string;
-    head_image: string;
-    title: string;
-    view: number;
-    publish_time: string;
-    edit_time: string;
-    tags: Blotter.Tag[];
-    images: string[];
-  };
-  container?: HTMLElement;
+  post: Blotter.Post;
 }
 
 interface PostContentState {
@@ -156,14 +47,23 @@ class PostContent extends Component<PostContentProps, PostContentState> {
       }
     }
   }
+
+  resetTable() {
+    const tables = document.getElementsByTagName('table');
+    for (var i = 0; i < tables.length; i++) {
+      tables[i].outerHTML = `<div class="${styles.table_wrapper}">${tables[i].outerHTML}</div>`;
+    }
+  }
   componentDidMount() {
     this.resetImage();
+    this.resetTable();
     if (this.isTravel()) {
       this.getTravelData();
     }
   }
   componentDidUpdate() {
     this.resetImage();
+    this.resetTable();
   }
 
   isTravel = () => {
@@ -214,7 +114,7 @@ class PostContent extends Component<PostContentProps, PostContentState> {
 
   render() {
     return this.props.post === undefined ? (
-      <Skeleton active={true} />
+      <Loading />
     ) : (
       <article className={styles.post}>
         <Head>
@@ -230,11 +130,7 @@ class PostContent extends Component<PostContentProps, PostContentState> {
 
         <Flex direction="TB" fullWidth>
           <Card neumorphismInset>
-            <Context.Consumer>
-              {(context) => (
-                <CardContent post={this.props.post} editable={(context.user.permission & 1) == 1} />
-              )}
-            </Context.Consumer>
+            <CardContent post={this.props.post} inPost />
           </Card>
 
           {this.renderTravel()}
@@ -244,7 +140,7 @@ class PostContent extends Component<PostContentProps, PostContentState> {
               images={this.props.post.images}
               height={'500px'}
               maxHeight={'50vh'}
-              autoplay
+              autoplay={5000}
             />
           ) : null}
 
@@ -253,7 +149,6 @@ class PostContent extends Component<PostContentProps, PostContentState> {
             dangerouslySetInnerHTML={{ __html: this.props.post.content }}
           />
         </Flex>
-        <AnchorsPart container={this.props.container} content={this.props.post.content} />
       </article>
     );
   }

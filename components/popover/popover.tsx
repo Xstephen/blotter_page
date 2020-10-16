@@ -4,9 +4,8 @@ import Body from './body';
 
 import { concat, ComponentProps } from '@/utils/component';
 
-import { getOffsetTop, getOffsetLeft } from '@/utils/offset';
-
-import styles from './popover.less';
+import styles from './popover.module.scss';
+import shadowStyles from '@/styles/shadow.module.scss';
 
 export declare type PopoverProps = ComponentProps<{
   component?: React.ReactNode;
@@ -14,7 +13,11 @@ export declare type PopoverProps = ComponentProps<{
   trigger?: ('click' | 'hover')[];
   popoverClass?: string;
   popoverStyle?: React.CSSProperties;
-  getOffset?: () => { top?: number; left?: number };
+  closeDelay?: number;
+  arrow?: boolean;
+  card?: boolean;
+  shadow?: boolean;
+  debug?: boolean;
 }>;
 
 export default function Popover(props: PopoverProps) {
@@ -27,47 +30,70 @@ export default function Popover(props: PopoverProps) {
     popoverClass,
     popoverStyle,
     children,
-    getOffset = () => ({ top: 0, left: 0 }),
+    closeDelay = 200,
+    arrow = true,
+    card = false,
+    shadow = false,
+    debug = false,
   } = props;
   const ref = React.useRef<HTMLDivElement>();
   const childRef = React.useRef<HTMLDivElement>();
   const [pos, setPos] = React.useState({} as React.CSSProperties);
   const [show, setShow] = React.useState(false);
+  //   const [willClose, setWillClose] = React.useState(false);
   const getPosition = React.useCallback(() => {
-    const { top = 0, left = 0 } = getOffset();
+    if (!ref.current || !childRef.current) return { top: -99999, left: -99999 };
+    const origin = ref.current.getBoundingClientRect();
+    const child = childRef.current.getBoundingClientRect();
     return {
       top:
-        top +
-        (placement === 'top'
-          ? getOffsetTop(ref.current) - childRef.current.offsetHeight - 10
+        placement === 'top'
+          ? origin.top + window.pageYOffset - child.height - 10
           : placement === 'bottom'
-          ? getOffsetTop(ref.current) + ref.current.offsetHeight + 10
-          : getOffsetTop(ref.current) -
-            (childRef.current.offsetHeight - ref.current.offsetHeight) / 2),
+          ? origin.top + window.pageYOffset + origin.height + 10
+          : origin.top + window.pageYOffset - (child.height - origin.height) / 2,
       left:
-        left +
-        (placement === 'left'
-          ? getOffsetLeft(ref.current) - childRef.current.offsetWidth - 10
+        placement === 'left'
+          ? origin.left + window.pageXOffset - child.width - 10
           : placement === 'right'
-          ? getOffsetLeft(ref.current) + ref.current.offsetWidth + 10
-          : getOffsetLeft(ref.current) -
-            childRef.current.offsetWidth / 2 +
-            ref.current.offsetWidth / 2),
+          ? origin.left + window.pageXOffset + origin.width + 10
+          : origin.left + window.pageXOffset - (child.width - origin.width) / 2,
     };
-  }, [ref]);
-  var classList = [styles.popover, styles[placement], popoverClass];
-  if (show) classList.push(styles.show);
+  }, [ref, childRef]);
+  const classList = React.useMemo(
+    () => [
+      styles.popover,
+      arrow ? styles.arrow : '',
+      styles[placement],
+      popoverClass,
+      show ? styles.show : '',
+      card ? styles.card : '',
+      shadow ? shadowStyles.shadow : '',
+    ],
+    [placement, popoverClass, show, arrow, card, shadow],
+  );
   const click = React.useMemo(() => trigger.indexOf('click') !== -1, [trigger]);
   const hover = React.useMemo(() => trigger.indexOf('hover') !== -1, [trigger]);
+  var willClose = false;
   const moveIn = () => {
     if (!show) setPos(getPosition());
     setShow(true);
+    willClose = false;
   };
-  const moveOut = () => setShow(false);
+  const moveOut = () => {
+    if (debug) return;
+    willClose = true;
+    setTimeout(() => {
+      if (willClose) {
+        setPos({});
+        setShow(false);
+      }
+    }, closeDelay);
+  };
   return (
     <div
       ref={ref}
-      className={className}
+      className={concat(styles.popover_origin, className)}
       style={style}
       onClick={() => {
         if (click) moveIn();

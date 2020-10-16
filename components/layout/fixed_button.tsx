@@ -1,32 +1,24 @@
 import React from 'react';
 
-import { Icon } from '@ant-design/compatible';
-
 import { Flex } from '@/components/container';
-import { Light, Dark, Message, Rocket } from '@/components/svg';
+import { Light, Dark, Message, Rocket, Mail, QQ, Comments } from '@/components/svg';
 import Button from '@/components/button';
 import { Modal } from '@/components/popover';
 
 import { Context } from '@/utils/global';
+import { scrollAnimation } from '@/utils/scroll';
 
-import styles from './fixed_button.less';
-
-function scrollTopAnimation(_currentY?: number) {
-  const currentY = !!_currentY
-    ? _currentY
-    : document.documentElement.scrollTop || document.body.scrollTop;
-  const dist = Math.max(10, currentY / 20);
-  const newY = Math.max(0, currentY - dist);
-  window.scrollTo(0, newY);
-  if (newY > 0) {
-    setTimeout(() => {
-      scrollTopAnimation(newY);
-    }, 1);
-  }
-}
+import styles from './fixed_button.module.scss';
 
 function BackToTop() {
-  return <Button circle neumorphism icon={<Rocket />} onClick={() => scrollTopAnimation()} />;
+  return (
+    <Button
+      circle
+      neumorphism
+      icon={<Rocket />}
+      onClick={() => scrollAnimation(document.documentElement, 0)}
+    />
+  );
 }
 
 function Feedback() {
@@ -37,7 +29,6 @@ function Feedback() {
       icon={<Message />}
       neumorphism
       onClick={() => {
-        console.log(Modal.info);
         Modal.info({
           children: (
             <div>
@@ -59,7 +50,7 @@ function Feedback() {
                 直接使用
                 <a href={`mailto:${context.email}`} target="__blank">
                   {' '}
-                  <Icon type="mail" /> 邮件
+                  <Mail /> 邮件
                 </a>{' '}
                 反馈bug
               </p>
@@ -70,7 +61,7 @@ function Feedback() {
                   target="__blank"
                 >
                   {' '}
-                  <Icon type="qq" /> QQ
+                  <QQ /> QQ
                 </a>{' '}
                 反馈bug
               </p>
@@ -78,7 +69,7 @@ function Feedback() {
                 直接在评论区
                 <a href="/comment" target="__blank">
                   {' '}
-                  <Icon type="comment" /> 评论区
+                  <Comments /> 评论区
                 </a>{' '}
                 反馈bug
               </p>

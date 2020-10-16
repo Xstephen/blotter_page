@@ -8,14 +8,14 @@ import { WithRouterProps } from 'next/dist/client/with-router';
 import { layout } from '@/utils/api';
 import { Context } from '@/utils/global';
 
-import styles from '@/components/layout/layout.less';
+import styles from '@/components/layout/layout.module.scss';
 import SiderRenderer from '@/components/layout/sider';
 import FooterRenderer from '@/components/layout/footer';
 import FixedButton from '@/components/layout/fixed_button';
 import { Flex } from '@/components/container';
 
-import '@/styles/theme.less';
 import { concat } from '@/utils/component';
+import { message } from '../notification';
 
 interface BasicLayoutProps extends ComponentProps<'base'>, WithRouterProps {}
 interface BasicLayoutState {
@@ -49,6 +49,23 @@ class BasicLayout extends React.Component<BasicLayoutProps, BasicLayoutState> {
   componentDidMount() {
     this.context.callback({ big_screen: document.body.clientWidth > 1024 });
     window.addEventListener('resize', this.onResize);
+    // 苹果用户提醒
+    // https://github.com/facebook/react/issues/17258
+    var issafariBrowser = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    if (issafariBrowser) {
+      message({
+        alertType: 'warning',
+        autoClose: 0,
+        title: '苹果用户提醒',
+        content: (
+          <div>
+            检测到您是苹果用户，IOS 13 后 Safari 的 Webkit 可能存在
+            Bug，部分按钮可能难以触发，请快速多次点击或尝试长按触发。相关讨论可见{' '}
+            <a href="https://github.com/facebook/react/issues/17258">Github</a>
+          </div>
+        ),
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -65,8 +82,10 @@ class BasicLayout extends React.Component<BasicLayoutProps, BasicLayoutState> {
   };
 
   render() {
+    if (typeof document !== 'undefined')
+      document.body.className = concat('default', this.context.theme);
     return (
-      <div id="blotter_root" className={concat(styles.root, 'default', this.context.theme)}>
+      <div id="blotter_root" className={concat(styles.root)}>
         <Context.Consumer>
           {(context) => (
             <Head>

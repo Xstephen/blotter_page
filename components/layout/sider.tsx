@@ -2,11 +2,8 @@ import React from 'react';
 
 import Link from 'next/link';
 
-import { Icon } from '@ant-design/compatible';
-
-import If from '@/components/if';
 import { Flex } from '@/components/container';
-import { Left, Bar, User } from '@/components/svg';
+import SVG, { Left, Bar, User, IconName } from '@/components/svg';
 import Button from '@/components/button';
 import Avatar from '@/components/avatar';
 import Popover, { Tooltip } from '@/components/popover';
@@ -16,12 +13,12 @@ import ShowNotification from '@/utils/notification';
 import { setCookie } from '@/utils/storage';
 import { GlobalProps, defaultContext } from '@/utils/global';
 
-import styles from './sider.less';
-import shadowStyles from '@/styles/shadow.less';
+import styles from './sider.module.scss';
+import shadowStyles from '@/styles/shadow.module.scss';
 import { LoginModal } from '../login';
 import Card from '../card';
 
-export default function (props: {
+export default function Sider(props: {
   user: Blotter.User;
   avatar: string;
   big_screen: boolean;
@@ -59,14 +56,17 @@ export default function (props: {
           direction="TB"
           wrap={false}
           className={[shadowStyles.shadow, styles.siderbar].join(' ')}
-          style={{ width: collapsed ? (big_screen ? 80 : 0) : 200 }}
+          style={{
+            width: collapsed ? (big_screen ? 80 : 0) : 200,
+            maxWidth: collapsed ? (big_screen ? 80 : 0) : 200, // 苹果设备在 width = 0 时会恢复宽度，设置 max-width 来避免该问题
+          }}
         >
           <div />
 
           <img
             src={avatar}
             width="100%"
-            height="100%"
+            // 在 Ubuntu 的 Chrome 上，点击 menu 项时，图片会奇怪地变大。删除 height 参数解决
             style={{ background: 'white', borderRadius: '100px', maxWidth: '120px' }}
           />
           {!user.existed ? (
@@ -79,14 +79,8 @@ export default function (props: {
             <Popover
               placement="right"
               trigger={['click', 'hover']}
-              popoverClass={shadowStyles.shadow}
-              popoverStyle={
-                {
-                  boxShadow: '5px 5px 30px var(--shadow)',
-                  ['--popover-backgroud']: 'var(--background)',
-                } as React.CSSProperties
-              }
-              getOffset={() => ({ top: document.documentElement.scrollTop })}
+              card
+              shadow
               component={
                 <Card style={{ background: 'var(--background)', maxWidth: 200 }}>
                   <Flex direction="TB" fullWidth>
@@ -106,15 +100,13 @@ export default function (props: {
                 </Card>
               }
             >
-              <span style={{ cursor: 'pointer' }}>
-                {user.avatar ? (
-                  <Avatar src={user.avatar} />
-                ) : (
-                  <Avatar>
-                    <User />
-                  </Avatar>
-                )}
-              </span>
+              {user.avatar ? (
+                <Avatar src={user.avatar} />
+              ) : (
+                <Avatar>
+                  <User />
+                </Avatar>
+              )}
             </Popover>
           )}
           <Flex.Item style={{ width: '100%' }}>
@@ -131,13 +123,7 @@ export default function (props: {
           />
         </div>
       </Flex>
-      <LoginModal
-        show={loginModal}
-        onCancel={() => setLoginModal(false)}
-        callback={(success) => {
-          if (success) setLoginModal(false);
-        }}
-      />
+      <LoginModal show={loginModal} onClose={() => setLoginModal(false)} />
     </div>
   );
 }
@@ -149,17 +135,15 @@ function Menus(props: { menus: Blotter.Menu[]; theme: 'light' | 'dark'; pathname
       {menus.map((item: Blotter.Menu) => {
         const menuItem = (
           <div>
-            <span className={styles.prefix}>{item.icon ? <Icon type={item.icon} /> : null}</span>
+            <span className={styles.prefix}>
+              {item.icon ? <SVG icon={item.icon as IconName} /> : null}
+            </span>
             <span className={styles.text}>{item.name}</span>
           </div>
         );
         return (
           <li key={item.link} className={item.link === pathname ? styles.active : ''}>
-            <Tooltip
-              placement="right"
-              title={item.name}
-              getOffset={() => ({ top: document.documentElement.scrollTop })}
-            >
+            <Tooltip placement="right" title={item.name}>
               {item.link.length > 0 && item.link[0] !== '/' ? (
                 <a target="_blank" href={item.link}>
                   {menuItem}

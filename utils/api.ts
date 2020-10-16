@@ -185,10 +185,18 @@ export const postExist = async (url: string, callback?: RequestCallback<{ existe
 };
 
 export const postEdit = async (
-  args: Blotter.PostAll,
+  post: TypeTReplaceByU<
+    Omit<Blotter.PostAll, 'content'>,
+    { publish_time: number; edit_time: number }
+  >,
   callback?: RequestCallback<Blotter.APIResponse>,
 ) => {
-  return await request('post', '/api/admin/post/edit', args, callback);
+  return await request(
+    'post',
+    '/api/admin/post/edit',
+    { ...post, tags: post.tags.map((tag) => tag.id) },
+    callback,
+  );
 };
 
 export const postDelete = async (id: string, callback?: RequestCallback<Blotter.APIResponse>) => {
@@ -446,7 +454,7 @@ export const qiniu_get_token = async (
   bucket: string,
   callback?: RequestCallback<{ token: string }>,
 ) => {
-  return await request('get', '/api/qiniu/token', { buket }, callback);
+  return await request('get', '/api/qiniu/token', { bucket }, callback);
 };
 
 export const qiniu_delete_image = async (

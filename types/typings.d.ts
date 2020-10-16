@@ -2,6 +2,8 @@ declare module '*.css';
 declare module '*.png';
 declare module '*.svg';
 declare module '*.less';
+declare module '*.sass';
+declare module '*.scss';
 
 declare type TypeUInT<T, U> = {
   [K in keyof T]: T[K] extends U ? K : never;
@@ -14,6 +16,8 @@ type TypeUHasKeyOfT<T, U> = {
 declare type TypeTReplaceByU<T, U extends TypeUHasKeyOfT<T, U>> = {
   [K in keyof T]: { K: T[K] } extends U[K] ? T[K] : U[K];
 };
+
+declare type Combine<T, U> = Omit<U, keyof T> & T;
 
 declare namespace Blotter {
   interface User {
@@ -64,10 +68,11 @@ declare namespace Blotter {
     abstract: string;
     view: number;
     url: string;
-    publish_time: string;
-    edit_time: string;
+    publish_time: number;
+    edit_time: number;
     tags: Tag[];
     head_image: string;
+    length: number;
   }
   interface Post extends PostCard {
     content: string;

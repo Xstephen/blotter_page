@@ -12,6 +12,10 @@ import ErrorPage from '@/pages/_error';
 
 import { view, info } from '@/utils/api';
 
+import '@/styles/global.scss';
+import '@/styles/theme.scss';
+import '@/components/image/image.scss';
+
 interface MyAppProps extends AppProps {
   globalProps: GlobalProps;
   status: number;
@@ -79,6 +83,7 @@ export default class MyApp extends App<MyAppProps, {}, MyAppState> {
       <Context.Provider value={this.state}>
         <Head>
           <title>{this.state.blog_name}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           {this.state.grey ? (
             <style
               id="grey-style"

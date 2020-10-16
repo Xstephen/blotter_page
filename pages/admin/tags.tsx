@@ -2,20 +2,15 @@ import React, { ComponentProps } from 'react';
 
 import Head from 'next/head';
 
-import { Card, Table, Button, Typography, Form, Input, Popconfirm } from 'antd';
-import { ColumnProps } from 'antd/lib/table';
-import { Icon } from '@ant-design/compatible';
-import { FileImageOutlined } from '@ant-design/icons';
-import { PaginationConfig } from 'antd/lib/pagination';
-import {
-  SorterResult,
-  TableCurrentDataSource,
-  TablePaginationConfig,
-} from 'antd/lib/table/interface';
-
-import Container from '@/components/container';
+import { Flex } from '@/components/container';
+import { Edit, Plus, Delete, Image } from '@/components/svg';
 import TagPart from '@/components/tag';
-import Qiniu from '@/components/upload';
+import { QiniuModal } from '@/components/upload';
+import Table, { Column } from '@/components/table';
+import Button from '@/components/button';
+import Input, { TextArea } from '@/components/input';
+import Popover from '@/components/popover';
+import Card from '@/components/card';
 
 import { Context } from '@/utils/global';
 import { adminTags, tagDelete, tagEdit } from '@/utils/api';
@@ -29,13 +24,14 @@ interface AdminTagListProps extends ComponentProps<'base'> {}
 
 interface AdminTagListState {
   loading: boolean;
-  pagination: PaginationConfig;
   data: T[];
   total: number;
   size: number;
   page: number;
   keyword: string;
   upload: boolean;
+  sortField: string;
+  sortAscending: boolean;
 }
 
 const defaultSortField = 'count';
@@ -48,13 +44,14 @@ class AdminTagList extends React.Component<AdminTagListProps, AdminTagListState>
     super(props);
     this.state = {
       loading: false,
-      pagination: {},
       data: [],
       total: 0,
       page: 1,
       size: 10,
       keyword: '',
       upload: false,
+      sortField: 'count',
+      sortAscending: false,
     };
   }
 
@@ -71,114 +68,123 @@ class AdminTagList extends React.Component<AdminTagListProps, AdminTagListState>
   ) => {
     this.setState({ loading: true, page, size });
     var r = await adminTags(keyword, page, size, field, up);
-    this.setState({ data: r.tags, total: r.total, loading: false });
+    this.setState({
+      data: r.tags,
+      total: r.total,
+      loading: false,
+      sortField: field,
+      sortAscending: up,
+    });
   };
 
   renderEditableCell = (idx: number, key: string, textarea = false) => {
-    const width = textarea ? '100%' : this.columns.find((item) => item.key == key).width;
-    const padding = 16;
-    var style = { width: undefined };
-    if (typeof width === 'number') {
-      style.width = width - padding * 2;
-    } else {
-      style.width = `calc(width - ${padding * 2}px)`;
-    }
-    return (
-      <div style={style}>
-        <Typography.Text
-          style={{ width: '100%' }}
-          ellipsis={true}
-          editable={{
-            onChange: (value) => {
-              this.setState((state) => {
-                var { data } = state;
-                data[idx][key] = value;
-                return { data };
-              });
-            },
-          }}
-        >
-          {this.state.data[idx][key]}
-        </Typography.Text>
-      </div>
-    );
+    const props = {
+      transform: true,
+      value: this.state.data[idx][key],
+      onChange: (value) => {
+        this.setState((state) => {
+          var { data } = state;
+          data[idx][key] = value;
+          return { data };
+        });
+      },
+    };
+    return textarea ? <TextArea {...props} /> : <Input {...props} />;
   };
 
-  columns: ColumnProps<T>[] = [
+  columns: Column<T>[] = [
     {
       title: '名称',
       key: 'name',
-      dataIndex: 'name',
+      tooltip: (text) => text,
       sorter: true,
-      width: 200,
+      minWidth: '5em',
+      maxWidth: '10em',
       ellipsis: true,
       render: (_, __, idx) => this.renderEditableCell(idx, 'name'),
     },
     {
       title: '链接',
       key: 'short',
-      dataIndex: 'short',
+      tooltip: (text) => text,
       sorter: true,
-      width: 200,
+      minWidth: '5em',
+      maxWidth: '10em',
       ellipsis: true,
       render: (_, __, idx) => this.renderEditableCell(idx, 'short'),
     },
     {
       title: '图标',
       key: 'icon',
-      dataIndex: 'icon',
+      tooltip: (text) => text,
       sorter: true,
-      width: 200,
+      minWidth: '5em',
+      maxWidth: '10em',
       ellipsis: true,
       render: (_, __, idx) => this.renderEditableCell(idx, 'icon'),
     },
     {
       title: '颜色',
       key: 'color',
-      dataIndex: 'color',
+      tooltip: (text) => text,
       sorter: true,
-      width: 150,
+      minWidth: '5em',
+      maxWidth: '10em',
       ellipsis: true,
       render: (_, __, idx) => this.renderEditableCell(idx, 'color'),
     },
     {
       title: '预览',
       key: 'view',
-      dataIndex: 'view',
-      width: 100,
-      ellipsis: true,
+      minWidth: '10em',
+      maxWidth: '20em',
       render: (_, record, __) => <TagPart tag={record} />,
     },
     {
       title: '文章个数',
       key: 'count',
-      dataIndex: 'count',
-      width: 120,
+      tooltip: true,
+      minWidth: '6em',
+      maxWidth: '12em',
       ellipsis: true,
     },
     {
       title: '操作',
       key: 'op',
+      minWidth: '12em',
+      maxWidth: '15em',
+      headStyle: { textAlign: 'center' },
       render: (_, record, idx) => (
-        <div style={{ whiteSpace: 'nowrap' }}>
-          <Button size="small" onClick={() => this.onEdit(idx)}>
-            <Icon type="edit" />
+        <Flex mainAxis="space-around">
+          <Button size="small" onClick={() => this.onEdit(idx)} neumorphism prefix={<Edit />}>
             修改
-          </Button>{' '}
-          <Popconfirm
-            title="真的要删除么？"
-            onConfirm={() => {
-              this.onDelete(record.id);
-            }}
-            okText="删除！"
-            cancelText="算了"
+          </Button>
+          <Popover
+            shadow
+            card
+            trigger={['click']}
+            component={
+              <Card>
+                <span>真的要删除么？</span>
+                <Button
+                  onClick={() => {
+                    this.onDelete(record.id);
+                  }}
+                  size="small"
+                  danger
+                  neumorphism
+                  primary
+                >
+                  删除！
+                </Button>
+              </Card>
+            }
           >
-            <Button size="small" danger>
-              <Icon type="delete" />
+            <Button size="small" danger neumorphism prefix={<Delete />}>
               删除
             </Button>
-          </Popconfirm>
-        </div>
+          </Popover>
+        </Flex>
       ),
     },
   ];
@@ -212,8 +218,7 @@ class AdminTagList extends React.Component<AdminTagListProps, AdminTagListState>
     this.setState((state) => ({ data: state.data.filter((tag) => tag.id != id) }));
   };
 
-  searchOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    var value = e.target.value;
+  searchOnChange = (value: string) => {
     waitUntil(
       'admin_tags_search',
       () => {
@@ -229,55 +234,31 @@ class AdminTagList extends React.Component<AdminTagListProps, AdminTagListState>
     );
   };
 
-  onTableChange = (
-    pagination: TablePaginationConfig,
-    filters: Record<string, React.ReactText[] | null>,
-    sorter: SorterResult<T>,
-    extra: TableCurrentDataSource<T>,
-  ) => {
-    const { current, pageSize } = pagination;
-    const { field, order } = sorter;
-    var defaultSort = typeof order === 'undefined';
-    this.getData(
-      this.state.keyword,
-      pageSize!,
-      current!,
-      defaultSort ? defaultSortField : `${field}`,
-      defaultSort ? defaultSortInc : order === 'ascend',
-    );
-  };
-
   renderImages = () => {
     return (
-      <div>
+      <React.Fragment>
+        <QiniuModal
+          show={this.state.upload}
+          onClose={() => this.setState({ upload: false })}
+          defaultTab="upload"
+        />
         <Button
-          shape="circle"
+          circle
           size="large"
-          type="primary"
+          primary
           danger={this.state.upload}
+          neumorphism
           style={{ position: 'fixed', right: 20, top: 50, zIndex: 2 }}
           onClick={() => this.setState((state) => ({ upload: !state.upload }))}
-          icon={<FileImageOutlined />}
+          icon={<Image />}
         />
-        <div
-          className={['upload', 'shadow'].join(' ')}
-          style={{
-            right: 120,
-            top: 50,
-            ...(this.state.upload
-              ? { opacity: 1, visibility: 'visible' }
-              : { opacity: 0, visibility: 'hidden' }),
-          }}
-        >
-          <Qiniu defaultTab="upload" />
-        </div>
-      </div>
+      </React.Fragment>
     );
   };
 
   render() {
     return (
-      <Container lg={20} md={20} sm={24} xs={24}>
+      <Card>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -286,36 +267,40 @@ class AdminTagList extends React.Component<AdminTagListProps, AdminTagListState>
           )}
         </Context.Consumer>
         {this.renderImages()}
-        <Card>
-          <Form layout="inline">
-            <Form.Item wrapperCol={{ md: 20, sm: 24 }}>
-              <Input placeholder="搜索标签" onChange={this.searchOnChange}></Input>
-            </Form.Item>
-            <Form.Item wrapperCol={{ md: 4, sm: 24 }}>
-              <Button type="primary" onClick={this.onInsert}>
-                <Icon type="plus" />
-                新建标签
-              </Button>
-            </Form.Item>
-          </Form>
+        <Flex subSize="middle">
+          <Flex.Item style={{ flex: '1 1 auto' }}>
+            <Input placeholder="搜索标签" onChange={this.searchOnChange}></Input>
+          </Flex.Item>
+          <Button primary onClick={this.onInsert} neumorphism prefix={<Plus />}>
+            新建标签
+          </Button>
+        </Flex>
 
-          <Table<T>
-            rowKey={(record) => record.id}
-            columns={this.columns}
-            scroll={{ x: true }}
-            dataSource={this.state.data}
-            loading={this.state.loading}
-            onChange={(a, b, c, d) => this.onTableChange(a, b, Array.isArray(c) ? c[0] : c, d)}
-            expandedRowRender={(_, idx) => this.renderEditableCell(idx, 'description', true)}
-            pagination={{
-              current: this.state.page,
-              total: this.state.total,
-              pageSize: this.state.size,
-              showSizeChanger: true,
-            }}
-          />
-        </Card>
-      </Container>
+        <Table<T>
+          //   rowKey={(record) => record.id}
+          columns={this.columns}
+          //   scroll={{ x: true }}
+          data={this.state.data}
+          loading={this.state.loading}
+          //   onChange={}
+          expand={(_, idx) => this.renderEditableCell(idx, 'description', true)}
+          pagination={{
+            page: this.state.page,
+            size: this.state.size,
+            total: this.state.total,
+            sizeSelect: [10, 20, 30, 40, 50],
+          }}
+          onChange={(page, size, name, ascending) => {
+            this.getData(
+              this.state.keyword,
+              size,
+              page,
+              !!name ? name : defaultSortField,
+              !!name ? ascending : defaultSortInc,
+            );
+          }}
+        />
+      </Card>
     );
   }
 }

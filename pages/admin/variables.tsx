@@ -2,17 +2,16 @@ import React, { ComponentProps } from 'react';
 
 import Head from 'next/head';
 
-import { Card, Button } from 'antd';
-import { SaveOutlined } from '@ant-design/icons';
+import Button from '@/components/button';
+import Card from '@/components/card';
+import { Save } from '@/components/svg';
+import { DynamicForm } from '@/components/input';
 
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-import Container from '@/components/container';
-
 import { variables, variablesSet } from '@/utils/api';
 import { Context } from '@/utils/global';
-import DynamicForm from '@/components/dynamic_form';
 import ShowNotification from '@/utils/notification';
 
 interface AdminVariablesProps extends ComponentProps<'base'> {}
@@ -45,7 +44,7 @@ class AdminVariables extends React.Component<AdminVariablesProps, AdminVariables
 
   render() {
     return (
-      <Container lg={20} md={20} sm={24} xs={24}>
+      <Card neumorphism style={{ overflow: 'auto' }}>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -53,24 +52,22 @@ class AdminVariables extends React.Component<AdminVariablesProps, AdminVariables
             </Head>
           )}
         </Context.Consumer>
-        <Card style={{ overflow: 'auto' }}>
-          <div style={{ minWidth: 1000 }}>
-            <DndProvider backend={HTML5Backend}>
-              <DynamicForm
-                value={this.state.variables}
-                callback={(value) => {
-                  this.setState({ variables: value });
-                }}
-              />
-            </DndProvider>
-          </div>
-        </Card>
+        <div style={{ minWidth: 1000 }}>
+          <DndProvider backend={HTML5Backend}>
+            <DynamicForm
+              value={this.state.variables}
+              callback={(value) => {
+                this.setState({ variables: value });
+              }}
+            />
+          </DndProvider>
+        </div>
         <Button
-          shape="circle"
+          circle
           size="large"
-          type="primary"
-          icon={<SaveOutlined />}
-          className="shadow"
+          primary
+          icon={<Save />}
+          neumorphism
           onClick={async () => {
             const v = this.state.variables;
             const data = Object.keys(v).map((key) => ({ key, value: v[key] }));
@@ -79,7 +76,7 @@ class AdminVariables extends React.Component<AdminVariablesProps, AdminVariables
           }}
           style={{ position: 'fixed', right: '20px', top: '120px' }}
         />
-      </Container>
+      </Card>
     );
   }
 }

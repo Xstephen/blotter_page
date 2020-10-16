@@ -7,28 +7,17 @@ import Card from '@/components/card';
 import { Close } from '@/components/svg';
 import Button from '@/components/button';
 
-import styles from './modal.less';
+import styles from './modal.module.scss';
 
-export declare type ModalProps = ComponentProps<{ show?: boolean; close?: boolean }>;
+export declare type ModalProps = ComponentProps<{ show?: boolean; onClose?: () => void }>;
 
-const Modal = (props: ModalProps) => {
-  const { show = true, className, style, children } = props;
+const ModalContent = (props: ModalProps) => {
+  const { onClose, className, style, children } = props;
   return (
-    <Body>
-      <div className={concat(className, styles.modal)} style={style}>
-        {children}
-      </div>
-    </Body>
-  );
-};
-
-const info = (props: ModalProps) => {
-  const { show = true, className, style, children, close = true } = props;
-  const { update, remove } = Body.Insert(({ update, remove }) => (
     <div>
       <div className={concat(className, styles.modal)} style={style}>
         <Card style={{ background: 'var(--background)' }}>
-          {close ? (
+          {!!onClose ? (
             <Button
               icon={<Close />}
               style={{
@@ -38,14 +27,29 @@ const info = (props: ModalProps) => {
                 marginBottom: -15,
                 float: 'right',
               }}
-              onClick={remove}
+              onClick={() => onClose()}
             />
           ) : null}
           <div style={{ clear: 'both' }}>{children}</div>
         </Card>
       </div>
-      <div className={styles.dimmed} onClick={remove}></div>
+      <div className={styles.dimmed} onClick={() => onClose()}></div>
     </div>
+  );
+};
+
+const Modal = (props: ModalProps) => {
+  const { show = true } = props;
+  return show ? (
+    <Body>
+      <ModalContent {...props} />
+    </Body>
+  ) : null;
+};
+
+const info = (props: ModalProps) => {
+  const { update, remove } = Body.Insert(({ update, remove }) => (
+    <ModalContent {...props} onClose={remove} />
   ));
   return { update, remove };
 };

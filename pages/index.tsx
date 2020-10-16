@@ -1,14 +1,14 @@
-import React, { ComponentProps, Fragment } from 'react';
+import React from 'react';
 
 import { NextPageContext } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 
-import { Input, Row, Col, Checkbox, List } from 'antd';
-import { Icon } from '@ant-design/compatible';
-
-import Container, { Space, Flex } from '@/components/container';
+import { Flex } from '@/components/container';
 import PostList from '@/components/post_list';
+import Input, { CheckBox } from '@/components/input';
+import { Search } from '@/components/svg';
+import PostSearch from '@/components/post_search';
 
 import { Context } from '@/utils/global';
 
@@ -19,7 +19,7 @@ import TagSearch from '@/components/tag_search';
 import Card from '@/components/card';
 import Button from '@/components/button';
 
-interface IndexProps extends ComponentProps<'base'> {
+interface IndexProps extends React.ComponentProps<'base'> {
   posts: Blotter.PostCard[];
 }
 
@@ -63,8 +63,7 @@ class Index extends React.Component<IndexProps, IndexState> {
     };
   }
 
-  onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    var value = e.target.value;
+  onChange = (value: string) => {
     waitUntil(
       'index_search',
       () => {
@@ -117,92 +116,6 @@ class Index extends React.Component<IndexProps, IndexState> {
     }
   };
 
-  renderTagSearch = (name: 'with_tags' | 'without_tags') => {
-    return (
-      <TagSearch
-        tags={this.state[name]}
-        onAdd={(tag) => {
-          this.setState((state) => {
-            var tags = state[name];
-            tags = tags.filter((item) => item.id != tag.id);
-            tags.push(tag);
-
-            var ret = { page: 1 };
-            ret[name] = tags;
-            return ret;
-          }, this.getPosts);
-        }}
-        onDelete={(tag) => {
-          this.setState((state) => {
-            var tags = state[name];
-            tags = tags.filter((item) => item.id != tag.id);
-
-            var ret = { page: 1 };
-            ret[name] = tags;
-            return ret;
-          }, this.getPosts);
-        }}
-      />
-    );
-  };
-
-  renderSearch = () => {
-    const checkboxs: { key: 'title' | 'abstract' | 'raw'; name: string }[] = [
-      { key: 'title', name: '标题' },
-      { key: 'abstract', name: '摘要' },
-      { key: 'raw', name: '内容' },
-    ];
-    return (
-      <Fragment>
-        <Row>
-          <Input
-            placeholder="搜索文章"
-            onChange={this.onChange}
-            allowClear
-            prefix={<Icon type="search" />}
-            size="large"
-          />
-        </Row>
-        <Row gutter={10}>
-          <Col>搜索范围：</Col>
-          {checkboxs.map((item) => (
-            <Col key={item.key}>
-              <Checkbox
-                checked={this.state.search_fields.indexOf(item.key) !== -1}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  console.log(item, checked, this.state.search_fields);
-                  this.setState((state) => {
-                    var { search_fields } = state;
-                    search_fields = search_fields.filter((it) => it != item.key);
-                    if (checked) {
-                      search_fields.push(item.key);
-                    }
-                    return { search_fields };
-                  }, this.getPosts);
-                }}
-              >
-                {item.name}
-              </Checkbox>
-            </Col>
-          ))}
-        </Row>
-        <Row gutter={10}>
-          <Col>从这些标签里搜索：</Col>
-          <Col>{this.renderTagSearch('with_tags')}</Col>
-        </Row>
-        <Row gutter={10}>
-          <Col>从这些标签里排除：</Col>
-          <Col>{this.renderTagSearch('without_tags')}</Col>
-        </Row>
-        <Space direction="horizontal">
-          {this.state.tags.map((tag) => (
-            <TagPart tag={tag} key={tag.short} />
-          ))}
-        </Space>
-      </Fragment>
-    );
-  };
   render() {
     return (
       <div>
@@ -213,28 +126,40 @@ class Index extends React.Component<IndexProps, IndexState> {
             </Head>
           )}
         </Context.Consumer>
-        <Container>
-          <Flex direction="TB" fullWidth>
-            <Card neumorphism style={{ lineHeight: '2em' }}>
-              {this.renderSearch()}
-            </Card>
-
-            <PostList
-              posts={this.state.posts}
-              header={this.state.total == 0 ? undefined : `共 ${this.state.total} 条搜索结果`}
-              loading={this.state.loading}
-              page={this.state.page}
-              size={this.state.size}
-              total={this.state.total}
-              callback={this.state.callback}
+        <Flex direction="TB" fullWidth>
+          <Card neumorphism style={{ lineHeight: '2em' }}>
+            <PostSearch
+              searchWord={this.state.search}
+              onSearchChange={this.onChange}
+              checkedKeys={this.state.search_fields}
+              onCheckChange={(search_fields) => this.setState({ search_fields })}
+              withTags={this.state.with_tags}
+              withoutTags={this.state.without_tags}
+              onTagChange={(type, tags) =>
+                this.setState((state) => ({
+                  ...state,
+                  ...{ [type === 'with' ? 'with_tags' : 'without_tags']: tags },
+                }))
+              }
+              tags={this.state.tags}
             />
-            <div className="textCenter">
-              <Link href="/archives?page=2&size=10">
-                <Button neumorphism>查看更多</Button>
-              </Link>
-            </div>
-          </Flex>
-        </Container>
+          </Card>
+
+          <PostList
+            posts={this.state.posts}
+            header={this.state.total == 0 ? undefined : `共 ${this.state.total} 条搜索结果`}
+            loading={this.state.loading}
+            page={this.state.page}
+            size={this.state.size}
+            total={this.state.total}
+            callback={this.state.callback}
+          />
+          <Flex.Item className="textCenter" style={{ textAlign: "center" }}>
+            <Link href="/archives?page=2&size=10">
+              <Button neumorphism>查看更多</Button>
+            </Link>
+          </Flex.Item>
+        </Flex>
       </div>
     );
   }

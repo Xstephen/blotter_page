@@ -1,106 +1,7 @@
-import React, { ComponentProps } from 'react';
-import { Row, Col, Space as S } from 'antd';
-import { Gutter } from 'antd/lib/grid/row';
+import React from 'react';
 import { ObjectFilter } from '@/utils/object';
 import { Context } from '@/utils/global';
-
-// interface ContainerProps extends ComponentProps<'base'> {
-//   xs?: number;
-//   sm?: number;
-//   md?: number;
-//   lg?: number;
-//   xl?: number;
-//   xxl?: number;
-//   gutter_h?: number;
-//   gutter_v?: number;
-// }
-
-// interface ContainerState {}
-
-// class Container extends React.Component<ContainerProps, ContainerState> {
-//   static defaultProps: ContainerProps = {
-//     xs: 24,
-//     sm: 20,
-//     md: 18,
-//     lg: 16,
-//     xl: undefined,
-//     xxl: undefined,
-//     gutter_h: 20,
-//     gutter_v: 40,
-//   };
-//   constructor(props: ContainerProps) {
-//     super(props);
-//   }
-//   render() {
-//     return <div style={{}}>{this.props.children}</div>;
-//   }
-// }
-
-function Container(props: React.PropsWithChildren<{}>) {
-  const context = React.useContext(Context);
-  return <div>{props.children}</div>;
-}
-
-export interface SpaceProps extends ComponentProps<'base'> {
-  direction?: 'horizontal' | 'vertical';
-  size?: number | 'small' | 'middle' | 'large';
-  textCenter?: boolean;
-  flexCenter?: boolean;
-  flex?:
-    | 'baseline'
-    | 'flex-start'
-    | 'flex-end'
-    | 'start'
-    | 'center'
-    | 'end'
-    | 'left'
-    | 'right'
-    | 'space-around'
-    | 'space-between'
-    | 'space-evenly'
-    | 'stretch';
-}
-
-const Space: React.FC<SpaceProps> = (props) => {
-  const {
-    direction = 'vertical',
-    size,
-    textCenter = false,
-    flexCenter = false,
-    className,
-    children,
-    style,
-    flex,
-  } = props;
-
-  var flexStyle = {};
-  if (!!flex) flexStyle = { flex: 'auto', justifyContent: flex };
-
-  var classNames: string[] = [className, 'fullWidth'];
-  if (flexCenter) classNames.push('flexCenter');
-  if (textCenter) classNames.push('textCenter');
-  return (
-    <S
-      className={classNames.join(' ')}
-      direction={direction}
-      size={size}
-      style={{ ...flexStyle, ...style }}
-    >
-      {children}
-    </S>
-  );
-};
-
-const TextCenter: React.FC = (props) => {
-  return <div className="textCenter">{props.children}</div>;
-};
-
-const FlexCenter: React.FC = (props) => {
-  return <div className="flexCenter">{props.children}</div>;
-};
-
-export default Container;
-export { Space, TextCenter, FlexCenter };
+import { concat, ComponentProps } from '@/utils/component';
 
 export declare type SizeProp = number | 'none' | 'small' | 'middle' | 'large';
 
@@ -116,7 +17,7 @@ function getSize(size: SizeProp): number {
     : size;
 }
 
-export declare type FlexProps = {
+export declare type FlexProps = ComponentProps<{
   direction?: 'LR' | 'TB' | 'row' | 'row-reverse' | 'column' | 'column-reverse';
   wrap?: true | false | 'nowrap' | 'wrap' | 'wrap-reverse';
   mainAxis?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around';
@@ -124,10 +25,9 @@ export declare type FlexProps = {
   mainSize?: SizeProp;
   subSize?: SizeProp;
   fullWidth?: boolean;
-  style?: React.CSSProperties;
   itemStyle?: React.CSSProperties;
-  className?: string;
-};
+}> &
+  React.HTMLAttributes<HTMLDivElement>;
 const FlexComponent: React.FC<FlexProps> = (props) => {
   const {
     direction = 'LR',
@@ -140,7 +40,7 @@ const FlexComponent: React.FC<FlexProps> = (props) => {
     fullWidth = false,
     children,
     style,
-    className,
+    ...restProps
   } = props;
   const list = (Array.isArray(children) ? children : [children]).filter((s) => !!s);
   const dir = direction === 'LR' ? 'row' : direction === 'TB' ? 'column' : direction;
@@ -217,8 +117,8 @@ const FlexComponent: React.FC<FlexProps> = (props) => {
 
   return (
     <div
-      className={className}
       style={{ ...(fullWidth ? { width: '100%' } : {}), ...containerStyles, ...style }}
+      {...restProps}
     >
       {list.map((child, idx) => (
         <FlexItem
@@ -236,12 +136,9 @@ const FlexComponent: React.FC<FlexProps> = (props) => {
   );
 };
 
-export declare type FlexItemProps = {
-  style?: React.CSSProperties;
-  className?: string;
-};
+export declare type FlexItemProps = ComponentProps<{}>;
 const FlexItem: React.FC<FlexItemProps> = (props) => {
-  var { style = {}, className = '', children } = props;
+  var { style = {}, className = '', children, ...restProps } = props;
   var child: any = children;
   if (!!!child) return null;
   const key = child.key;
@@ -252,14 +149,20 @@ const FlexItem: React.FC<FlexItemProps> = (props) => {
     !!child.type.name &&
     child.type.displayName === FlexItem.displayName
   ) {
-    const { style: style2, className: className2, children: child2 } = child.props;
+    const {
+      style: style2,
+      className: className2,
+      children: child2,
+      ...restProps2
+    } = child.props as FlexItemProps;
     style = { ...style, ...style2 };
     className = [className, className2].filter((s) => s != '').join(' ');
     child = child2;
+    restProps = { ...restProps, ...restProps2 };
   }
 
   return (
-    <div key={key} style={style} className={className}>
+    <div key={key} style={style} className={className} {...restProps}>
       {child}
     </div>
   );

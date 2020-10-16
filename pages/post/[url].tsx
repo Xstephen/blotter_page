@@ -5,21 +5,19 @@ import Head from 'next/head';
 import { withRouter } from 'next/router';
 import { WithRouterProps } from 'next/dist/client/with-router';
 
-import { message } from 'antd';
-
 import CommentPart from '@/components/comment';
-import Container, { Flex } from '@/components/container';
+import { Flex } from '@/components/container';
 import PostContent from '@/components/post_content';
 import { Qzone, QQ, Link } from '@/components/svg';
 import Card from '@/components/card';
 import Avatar from '@/components/avatar';
 import Button, { A } from '@/components/button';
+import Anchor from '@/components/anchor';
 
 import { post, view } from '@/utils/api';
 import { Context } from '@/utils/global';
 
-import './post.less';
-import If from '@/components/if';
+import './post.module.scss';
 
 interface PostPageProps extends ComponentProps<'base'>, WithRouterProps {
   post: Blotter.Post;
@@ -110,7 +108,7 @@ class PostPage extends React.Component<PostPageProps, PostPageState> {
 
   render() {
     return typeof this.props.post === 'undefined' ? null : (
-      <Container>
+      <React.Fragment>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -135,7 +133,8 @@ class PostPage extends React.Component<PostPageProps, PostPageState> {
             <CommentPart url={`/post/${this.props.router.query.url as string}`} />
           </Card>
         </Flex>
-      </Container>
+        <Anchor style={{ position: 'fixed' }} content={this.props.post.content} />
+      </React.Fragment>
     );
   }
 }

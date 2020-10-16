@@ -3,24 +3,23 @@ import React, { ComponentProps, Fragment } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 
-import { Card, Table, Button, Typography, Popconfirm, Input, Row, Col, Checkbox } from 'antd';
-import { ColumnProps } from 'antd/lib/table';
-import { Icon } from '@ant-design/compatible';
-import { PaginationConfig } from 'antd/lib/pagination';
-import {
-  SorterResult,
-  TableCurrentDataSource,
-  TablePaginationConfig,
-} from 'antd/lib/table/interface';
-
-import Container from '@/components/container';
+import Card from '@/components/card';
+import Table, { Column } from '@/components/table';
+import Button, { A } from '@/components/button';
+import Popover from '@/components/popover';
 import TagPart from '@/components/tag';
+import PostSearch from '@/components/post_search';
+import { Eye, EyeInvisible, Edit, Delete, Plus } from '@/components/svg';
+import { Flex } from '@/components/container';
 
 import { adminPosts, postDelete } from '@/utils/api';
 import { Context } from '@/utils/global';
 import ShowNotification from '@/utils/notification';
 import { waitUntil } from '@/utils/debounce';
 import TagSearch from '@/components/tag_search';
+import { formatSecond } from '@/utils/time';
+
+import textStyle from '@/styles/text.module.scss';
 
 const defaultSort = 'publish_time';
 const defaultUp = false;
@@ -36,7 +35,6 @@ interface AdminPostListState {
   search: string;
   search_fields: ('title' | 'abstract' | 'raw')[];
   loading: boolean;
-  pagination: PaginationConfig;
   data: T[];
   total: number;
   size: number;
@@ -56,7 +54,6 @@ class AdminPostList extends React.Component<AdminPostListProps, AdminPostListSta
       search: '',
       search_fields: ['title'],
       loading: false,
-      pagination: {},
       data: [],
       total: 0,
       size: 10,
@@ -72,8 +69,7 @@ class AdminPostList extends React.Component<AdminPostListProps, AdminPostListSta
     this.getData();
   }
 
-  onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    var value = e.target.value;
+  onChange = (value: string) => {
     waitUntil(
       'index_search',
       () => {
@@ -98,116 +94,117 @@ class AdminPostList extends React.Component<AdminPostListProps, AdminPostListSta
     this.setState({ total: r.total, data: r.posts, loading: false });
   };
 
-  columns: ColumnProps<T>[] = [
+  columns: Column<T>[] = [
     {
       title: '标题',
       key: 'title',
-      dataIndex: 'title',
-      width: 150,
+      minWidth: '5em',
+      maxWidth: '15em',
+      tooltip: (text) => text,
       ellipsis: true,
       render: (text, record, index) => (
-        <div style={{ width: 150 - 16 * 2 }} title={text}>
-          <Typography.Text style={{ width: '100%' }} ellipsis={true}>
-            <Link href={'/post/[url]'} as={`/post/${record.url}`}>
-              <a>{record.title}</a>
-            </Link>
-          </Typography.Text>
-        </div>
+        <Link href={'/post/[url]'} as={`/post/${record.url}`}>
+          <a>{record.title}</a>
+        </Link>
       ),
     },
     {
       title: '链接',
       key: 'url',
-      dataIndex: 'url',
-      width: 150,
+      tooltip: true,
+      minWidth: '5em',
+      maxWidth: '15em',
       ellipsis: true,
-      render: (text) => (
-        <div style={{ width: 150 - 16 * 2 }} title={text}>
-          <Typography.Text style={{ width: '100%' }} ellipsis={true}>
-            {text}
-          </Typography.Text>
-        </div>
-      ),
     },
     {
       title: '发布时间',
       key: 'publish_time',
-      dataIndex: 'publish_time',
+      tooltip: (text) => formatSecond(text),
       sorter: true,
-      width: 150,
+      minWidth: '10em',
+      maxWidth: '15em',
       ellipsis: true,
+      render: (text) => formatSecond(text),
     },
     {
       title: '编辑时间',
       key: 'edit_time',
-      dataIndex: 'edit_time',
+      tooltip: (text) => formatSecond(text),
       sorter: true,
-      width: 150,
+      minWidth: '10em',
+      maxWidth: '15em',
       ellipsis: true,
+      render: (text) => formatSecond(text),
     },
     {
       title: '阅读量',
       key: 'view',
-      dataIndex: 'view',
+      tooltip: true,
       sorter: true,
-      width: 100,
+      minWidth: '6em',
+      maxWidth: '15em',
       ellipsis: true,
     },
     {
       title: '已发布',
       key: 'published',
-      dataIndex: 'published',
       sorter: true,
-      width: 100,
-      ellipsis: true,
+      minWidth: '6em',
+      maxWidth: '15em',
       render: (text, record, index) =>
-        text ? (
-          <Icon type="eye" style={{ color: 'green' }}></Icon>
-        ) : (
-          <Icon type="eye-invisible" style={{ color: 'red' }}></Icon>
-        ),
+        text ? <Eye style={{ color: 'green' }} /> : <EyeInvisible style={{ color: 'red' }} />,
     },
     {
       title: '标签',
       key: 'tags',
-      dataIndex: 'tags',
-      width: 200,
-      ellipsis: true,
+      minWidth: '10em',
+      maxWidth: '20em',
       render: (text, record, index) => (
-        <div style={{ width: 200 - 16 * 2, whiteSpace: 'normal' }}>
+        <Flex mainSize="small" subSize="small" mainAxis="flex-start">
           {record.tags.map((tag) => (
             <TagPart key={tag.short} tag={tag} />
           ))}
-        </div>
+        </Flex>
       ),
     },
     {
       title: '操作',
       key: 'op',
+      minWidth: '12em',
+      maxWidth: '15em',
       render: (text, record, index) => (
-        <div style={{ whiteSpace: 'nowrap' }}>
+        <Flex mainAxis="space-around">
           <Link href={`/admin/post?url=${record.url}`}>
-            <a>
-              <Button size="small">
-                <Icon type="edit" />
-                编辑
-              </Button>
-            </a>
-          </Link>{' '}
-          <Popconfirm
-            title="真的要删除么？"
-            onConfirm={() => {
-              this.onDelete(record.id);
-            }}
-            okText="删除！"
-            cancelText="算了"
+            <A size="small" neumorphism prefix={<Edit />}>
+              编辑
+            </A>
+          </Link>
+          <Popover
+            shadow
+            card
+            trigger={['click']}
+            component={
+              <Card>
+                <span>真的要删除么？</span>
+                <Button
+                  onClick={() => {
+                    this.onDelete(record.id);
+                  }}
+                  danger
+                  neumorphism
+                  primary
+                  size="small"
+                >
+                  删除！
+                </Button>
+              </Card>
+            }
           >
-            <Button size="small" danger>
-              <Icon type="delete" />
+            <Button size="small" danger neumorphism prefix={<Delete />}>
               删除
             </Button>
-          </Popconfirm>
-        </div>
+          </Popover>
+        </Flex>
       ),
     },
   ];
@@ -218,109 +215,9 @@ class AdminPostList extends React.Component<AdminPostListProps, AdminPostListSta
     this.setState((state) => ({ data: state.data.filter((post) => post.id != id) }));
   };
 
-  onTableChange = (
-    pagination: TablePaginationConfig,
-    filters: Record<string, React.ReactText[] | null>,
-    sorter: SorterResult<T>,
-    extra: TableCurrentDataSource<T>,
-  ) => {
-    const { current, pageSize } = pagination;
-    const { field, order } = sorter;
-
-    var s = {} as any;
-    if (!!current) s.page = current;
-    if (!!pageSize) s.size = pageSize;
-    if (typeof order !== 'undefined') {
-      s.field = field;
-      s.up = order === 'ascend';
-    }
-
-    this.setState(s, this.getData);
-  };
-
-  renderTagSearch = (name: 'with_tags' | 'without_tags') => {
-    return (
-      <TagSearch
-        tags={this.state[name]}
-        onAdd={(tag) => {
-          this.setState((state) => {
-            var tags = state[name];
-            tags.filter((item) => item.id !== tag.id);
-            tags.push(tag);
-
-            var ret = { page: 1 };
-            ret[name] = tags;
-            return ret;
-          }, this.getData);
-        }}
-        onDelete={(tag) => {
-          this.setState((state) => {
-            var tags = state[name];
-            tags.filter((item) => item.id !== tag.id);
-
-            var ret = { page: 1 };
-            ret[name] = tags;
-            return ret;
-          }, this.getData);
-        }}
-      />
-    );
-  };
-  renderSearch = () => {
-    const checkboxs: { key: 'title' | 'abstract' | 'raw'; name: string }[] = [
-      { key: 'title', name: '标题' },
-      { key: 'abstract', name: '摘要' },
-      { key: 'raw', name: '内容' },
-    ];
-    return (
-      <Fragment>
-        <Row>
-          <Input
-            placeholder="搜索文章"
-            onChange={this.onChange}
-            allowClear
-            prefix={<Icon type="search" />}
-            size="large"
-          />
-        </Row>
-        <Row gutter={10}>
-          <Col>搜索范围：</Col>
-          {checkboxs.map((item) => (
-            <Col key={item.key}>
-              <Checkbox
-                checked={this.state.search_fields.indexOf(item.key) !== -1}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  console.log(item, checked, this.state.search_fields);
-                  this.setState((state) => {
-                    var { search_fields } = state;
-                    search_fields = search_fields.filter((it) => it != item.key);
-                    if (checked) {
-                      search_fields.push(item.key);
-                    }
-                    return { search_fields };
-                  }, this.getData);
-                }}
-              >
-                {item.name}
-              </Checkbox>
-            </Col>
-          ))}
-        </Row>
-        <Row gutter={10}>
-          <Col>从这些标签里搜索：</Col>
-          <Col>{this.renderTagSearch('with_tags')}</Col>
-        </Row>
-        <Row gutter={10}>
-          <Col>从这些标签里排除：</Col>
-          <Col>{this.renderTagSearch('without_tags')}</Col>
-        </Row>
-      </Fragment>
-    );
-  };
   render() {
     return (
-      <Container lg={20} md={20} sm={24} xs={24}>
+      <Card>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -328,36 +225,42 @@ class AdminPostList extends React.Component<AdminPostListProps, AdminPostListSta
             </Head>
           )}
         </Context.Consumer>
-        <Card>
-          {this.renderSearch()}
-          <Table<T>
-            rowKey={(record) => record.id}
-            columns={this.columns}
-            scroll={{ x: true }}
-            dataSource={this.state.data}
-            loading={this.state.loading}
-            onChange={(a, b, c, d) => this.onTableChange(a, b, Array.isArray(c) ? c[0] : c, d)}
-            title={() => (
-              <div style={{ textAlign: 'right' }}>
-                <Link href="/admin/post">
-                  <a>
-                    <Button type="primary">
-                      <Icon type="plus" />
-                      新建文章
-                    </Button>
-                  </a>
-                </Link>
-              </div>
-            )}
-            pagination={{
-              current: this.state.page,
-              total: this.state.total,
-              pageSize: this.state.size,
-              showSizeChanger: true,
-            }}
-          />
-        </Card>
-      </Container>
+        <PostSearch
+          searchWord={this.state.search}
+          onSearchChange={this.onChange}
+          checkedKeys={this.state.search_fields}
+          onCheckChange={(search_fields) => this.setState({ search_fields })}
+          withTags={this.state.with_tags}
+          withoutTags={this.state.without_tags}
+          onTagChange={(type, tags) =>
+            this.setState((state) => ({
+              ...state,
+              ...{ [type === 'with' ? 'with_tags' : 'without_tags']: tags },
+            }))
+          }
+        />
+        <div style={{ textAlign: 'right' }}>
+          <Link href="/admin/post">
+            <A primary neumorphism prefix={<Plus />}>
+              新建文章
+            </A>
+          </Link>
+        </div>
+        <Table<T>
+          columns={this.columns}
+          data={this.state.data}
+          loading={this.state.loading}
+          onChange={(page, size, field, up) =>
+            this.setState({ page, size, field, up }, this.getData)
+          }
+          pagination={{
+            page: this.state.page,
+            total: this.state.total,
+            size: this.state.size,
+            sizeSelect: [5, 10, 20, 50, 100],
+          }}
+        />
+      </Card>
     );
   }
 }

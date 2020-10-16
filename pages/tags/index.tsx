@@ -4,7 +4,6 @@ import Head from 'next/head';
 import { NextPageContext } from 'next';
 
 import TagPart from '@/components/tag';
-import Container from '@/components/container';
 import Card from '@/components/card';
 import { Flex } from '@/components/container';
 
@@ -12,7 +11,8 @@ import { tags } from '@/utils/api';
 import { Context } from '@/utils/global';
 import { sortTagsByPinYin, TagGroup } from '@/utils/sort';
 
-import styles from './tags.less';
+import styles from './tags.module.scss';
+import textStyles from '@/styles/text.module.scss';
 
 interface TagsProps extends React.ComponentProps<'base'> {
   total: number;
@@ -54,7 +54,7 @@ class Tags extends React.Component<TagsProps, TagsState> {
     return group.tags.length > 0 ? (
       <Card key={group.title} neumorphism>
         <Flex direction="TB" subAxis="flex-start" fullWidth>
-          <h2>{group.title}</h2>
+          <h2 className={textStyles.color}>{group.title}</h2>
           <Flex mainAxis="flex-start" mainSize={15} subSize={15}>
             {group.tags.map(this.renderTag)}
           </Flex>
@@ -65,7 +65,7 @@ class Tags extends React.Component<TagsProps, TagsState> {
 
   render() {
     return (
-      <Container>
+      <div>
         <Context.Consumer>
           {(context) => (
             <Head>
@@ -80,7 +80,7 @@ class Tags extends React.Component<TagsProps, TagsState> {
             ...this.props.tags.map(this.renderGroup),
           ]}
         </Flex>
-      </Container>
+      </div>
     );
   }
 }

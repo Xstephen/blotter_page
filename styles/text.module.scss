@@ -1,0 +1,42 @@
+.color {
+  transition: color var(--transition-time);
+  color: var(--color);
+  &:hover {
+    color: var(--color);
+  }
+  &:active {
+    color: var(--color);
+  }
+}
+
+.primary {
+  transition: color var(--transition-time);
+  color: var(--primary);
+  &:hover {
+    color: var(--primary);
+  }
+  &:active {
+    color: var(--primary);
+  }
+}
+
+.secondary {
+  transition: color var(--transition-time);
+  color: var(--secondary);
+  &:hover {
+    color: var(--secondary);
+  }
+  &:active {
+    color: var(--secondary);
+  }
+}
+
+.ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.em75 {
+  font-size: 0.75em;
+}

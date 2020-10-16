@@ -1,0 +1,30 @@
+.preview {
+  height: calc(100vh - 60px) !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.fixed_button {
+  position: fixed;
+  right: 20px;
+  top: 60px;
+  z-index: 2;
+  width: auto;
+  text-align: center;
+}
+
+.editor {
+  :global {
+    section > div {
+      height: calc(100vh - 60px) !important;
+    }
+
+    .monaco-editor,
+    .monaco-editor .margin,
+    .monaco-editor-background,
+    .monaco-editor .inputarea.ime-input {
+      background: var(--background) !important;
+      transition: background var(--transition-time);
+    }
+  }
+}
